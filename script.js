@@ -176,14 +176,38 @@ const updateUI = function (acc) {
   calcDisplaySummary(acc);
 };
 
+const startLogOutTimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(Math.trunc(time % 60)).padStart(2, 0);
+    //  In each callback call print remaining time to UI
+    labelTimer.textContent = `${min}:${sec}`;
+
+    // When 0 seconds, stop timer and log out user
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+    //  Decrease one second
+    time--;
+  };
+  // Set time to 5 minutes
+  let time = 120;
+  //  Call timer every second
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 ///////////////////////////////////////
 // Event handlers
-let currentAccount;
+let currentAccount, timer;
 
-// FAKE TO ALWAYS LOGGED IN
-currentAccount = account1;
-updateUI(currentAccount);
-containerApp.style.opacity = 100;
+// // FAKE TO ALWAYS LOGGED IN
+// currentAccount = account1;
+// updateUI(currentAccount);
+// containerApp.style.opacity = 100;
 
 // Experimenting with API
 const now = new Date();
@@ -197,10 +221,9 @@ const options = {
 // const locale = navigator.language;
 // console.log(locale);
 
-labelDate.textContent = new Intl.DateTimeFormat(
-  currentAccount.locale,
-  options
-).format(now);
+labelDate.textContent = new Intl.DateTimeFormat(currentAccount, options).format(
+  now
+);
 
 btnLogin.addEventListener('click', function (e) {
   // Prevent form from submitting
@@ -229,6 +252,10 @@ btnLogin.addEventListener('click', function (e) {
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
+
+    if (timer) clearInterval(timer);
+
+    startLogOutTimer();
 
     // Update UI
     updateUI(currentAccount);
@@ -259,6 +286,10 @@ btnTransfer.addEventListener('click', function (e) {
 
     // Update UI
     updateUI(currentAccount);
+
+    // Reset Timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
 });
 
@@ -268,14 +299,19 @@ btnLoan.addEventListener('click', function (e) {
   const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    // Add movement
-    currentAccount.movements.push(amount);
+    setTimeout(function () {
+      // Add movement
+      currentAccount.movements.push(amount);
 
-    // Add loan date
-    currentAccount.movementsDates.push(new Date().toISOString());
+      // Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString());
 
-    // Update UI
-    updateUI(currentAccount);
+      // Update UI
+      updateUI(currentAccount);
+
+      clearInterval(timer);
+      timer = startLogOutTimer();
+    }, 2500);
   }
   inputLoanAmount.value = '';
 });
@@ -309,51 +345,3 @@ btnSort.addEventListener('click', function (e) {
   displayMovements(currentAccount.movements, !sorted);
   sorted = !sorted;
 });
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
-
-// const isEven = n => n % 2 === 0;
-// console.log(isEven(8));
-// console.log(isEven(23));
-// console.log(isEven(514));
-// console.log(isEven(8.3));
-
-// labelBalance.addEventListener('click', function () {
-//   [...document.querySelectorAll('.movements__row')].forEach(function (row, i) {
-//     if (i % 2 === 0) row.style.backgroundColor = 'orangered';
-//   });
-// });
-
-// console.log(2 ** 53 - 1);
-// console.log(4658956545646546546546545646n);
-// console.log(BigInt(4658956545646546546546545646));
-
-// console.log(new Date());
-// console.log(new Date(account1.movementsDates[0]));
-// console.log(new Date(2037, 10, 19, 15, 23, 5));
-// console.log(new Date(2037, 10, 31, 15, 23, 5));
-
-// console.log(new Date(0));
-// console.log(new Date(3 * 24 * 60 * 60 * 1000));
-
-// const future = new Date(2037, 10, 19, 15, 23);
-// console.log(future);
-
-// console.log(future.toISOString);
-// console.log(future.getTime());
-
-// console.log(Date.now());
-
-const future = new Date(2037, 10, 19, 15, 23);
-console.log(+future);
-
-const calcDaysPassed = (date1, date2) =>
-  Math.abs(date2 - date1) / (1000 * 60 * 60 * 24);
-
-const days1 = calcDaysPassed(new Date(2037, 3, 14), new Date(2037, 3, 4));
-console.log(days1);
-
-const num = 321354.23;
-console.log('US:    ', new Intl.NumberFormat('en-US').format(num));
